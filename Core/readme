@@ -1,0 +1,8 @@
+该目录下文件对应hal中的位置
+
+Drivers\CMSIS\Device\ST\STM32F1xx\Source\Templates\arm\startup_stm32f103xe.s
+Drivers\CMSIS\Device\ST\STM32F1xx\Source\Templates\system_stm32f1xx.c           -- 新版本
+Projects\STM3210E_EVAL\Templates\Src\system_stm32f1xx.c                         -- 现在使用
+stm32f1xx_hal_conf.h                                                            -- 工程目录中的配置文件
+stm32f1xx_it.c                                                                  -- 工程目录中的中断文件
+stm32f1xx_clk.c                                                                 -- 自己实现的时钟配置文件
