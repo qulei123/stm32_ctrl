@@ -19,12 +19,6 @@
 static U8 SendBuf[CMT_BUF_SIZE]; 
 static BOOL bFactoryMode;
 
-
-BOOL Is_Factory_Mode(VOID)
-{
-    return bFactoryMode;
-}
-
 static PT_CMT_FRAME Format_Cmd(U8 u8CmdId, U8 *pData, U16 u16DataLen)
 {
     U8 *pBuf = SendBuf;
@@ -117,6 +111,11 @@ static INT Do_Ctrl_Motor_Cmd(U8 *pData, U16 u16Len)
     return 0;
 }
 
+BOOL Is_Factory_Mode(VOID)
+{
+    return bFactoryMode;
+}
+
 static VOID Motor_Query_Angle(S32 *pAngle)
 {
     int Id, ret;
@@ -155,24 +154,6 @@ static VOID Motor_Query_Angle(S32 *pAngle)
     }
 }
 
-/**
- * |故障位|电量|按键|红外|角度|
- * |  2B  | 1B | 4B | 1B | 12B|
- */
-static INT Report_All_Cmd(VOID)
-{
-    T_CMT_DATA tData;
-
-    tData.u16ErrBit = 0;
-    tData.u16Battery = Drv_Obtain_Baty_Volt();
-    Keys_Get_Val(tData.au8Key);
-    Ired_Get_Val(&tData.u8IrDA);
-    Motor_Query_Angle(tData.as32Angle);
-
-    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
-}
-
-
 /* 主动上报，u16 */
 INT Report_Battery_Cmd(U16 u16Battery)
 {
@@ -197,7 +178,85 @@ INT Report_Ired_Cmd(U8 u8Stat)
 INT Report_Angle_Cmd(U8 u8Id, S32 s32Angle)
 {
     T_CMT_ANGLE tAngle = {u8Id, s32Angle};
-    return Format_Send_Cmd(CMT_CMD_RPT_IRDA, (U8 *)&tAngle, sizeof(tAngle));
+    return Format_Send_Cmd(CMT_CMD_RPT_ANGLE, (U8 *)&tAngle, sizeof(tAngle));
+}
+
+
+/**
+ * |数据类型|故障位|电量|按键|红外|角度|
+ * |   1B   |  2B  | 1B | 4B | 1B | 12B|
+ */
+static INT Report_All_Cmd(VOID)
+{
+    T_CMT_DATA tData;
+
+    tData.u8Type     = CMT_DT_ALL;
+    tData.u16ErrBit  = 0;
+    tData.u16Battery = Drv_Obtain_Baty_Volt();
+    Keys_Get_Val(tData.au8Key);
+    Ired_Get_Val(&tData.u8IrDA);
+    Motor_Query_Angle(tData.as32Angle);
+
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
+static INT Report_Battery(VOID)
+{
+    T_CMT_DATA_BAT tData = {CMT_DT_BATTERY, 0, 0};
+
+    tData.u16Battery = Drv_Obtain_Baty_Volt();
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
+static INT Report_Key(VOID)
+{
+    T_CMT_DATA_KEY tData = {CMT_DT_KEY, 0, 0};
+    
+    Keys_Get_Val(tData.au8Key);
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
+static INT Report_Ired(VOID)
+{
+    T_CMT_DATA_IRDA tData = {CMT_DT_IRDA, 0, 0};
+    
+    Ired_Get_Val(&tData.u8IrDA);
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
+static INT Report_Angle(VOID)
+{
+    T_CMT_DATA_ANG tData = {CMT_DT_ANGLE, 0, 0};
+    
+    Motor_Query_Angle(tData.as32Angle);
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
+static T_ReportInfo atReportInfoTable[] = 
+{
+    {CMT_DT_ALL,     Report_All_Cmd},
+    {CMT_DT_BATTERY, Report_Battery},
+    {CMT_DT_KEY,     Report_Key},
+    {CMT_DT_IRDA,    Report_Ired},
+    {CMT_DT_ANGLE,   Report_Angle},
+};
+
+static INT Report_Cmd(INT iType)
+{
+    PT_ReportInfo ptReport = &atReportInfoTable[iType];
+    
+    if (iType >= N_ELEMENTS(atReportInfoTable))
+    {
+        log_e("data type[%d] err\n", iType);
+        return 1;
+    }        
+    
+    if (NULL == ptReport->pfHandler)
+    {
+        return 1;
+    }
+    
+    return ptReport->pfHandler();
 }
 
 /*
@@ -215,7 +274,7 @@ INT Do_Host_Cmd(U8 *pu8RecvData, U16 u16RecvLen)
     iRet = Host_Cmd_Verify(pu8RecvData, u16RecvLen);
     if (0 != iRet)
     {
-        log("cmd verify err\n");
+        log_w("cmd verify err\n");
         return 1;
     }
 
@@ -223,7 +282,8 @@ INT Do_Host_Cmd(U8 *pu8RecvData, U16 u16RecvLen)
     switch(ptFrm->u8Cmd) 
     {
         case CMT_CMD_POLL_INFO:
-            Report_All_Cmd();
+            //Report_All_Cmd();
+            Report_Cmd(ptFrm->pData[0]);
             break;
         case CMT_CMD_CTRL_MOTOR:
             Do_Ctrl_Motor_Cmd(ptFrm->pData, ptFrm->u16DataLen);
@@ -237,8 +297,11 @@ INT Do_Host_Cmd(U8 *pu8RecvData, U16 u16RecvLen)
         case CMT_CMD_CTRL_FACTORY:
             bFactoryMode = (BOOL)(ptFrm->pData[0]);
             break;
+        case CMT_CMD_CTRL_MTPWR:
+            Drv_Motor_Power(ptFrm->pData[0]);
+            break;
         default:
-            log("host cmd[%02X] err\n", ptFrm->u8Cmd);
+            log_e("host cmd[%02X] err\n", ptFrm->u8Cmd);
     }
 
     return 0;
@@ -282,11 +345,18 @@ static PT_CMT_FRAME Build_Factory_Cmd(U8 Status)
     return Format_Cmd(CMT_CMD_CTRL_FACTORY, &Status, sizeof(Status));
 }
 
+static PT_CMT_FRAME Build_Motor_Power_Cmd(U8 Status)
+{
+    return Format_Cmd(CMT_CMD_CTRL_MTPWR, &Status, sizeof(Status));
+}
+
+
 /* shell 调试接口 */
 static void Help_Link(void)
 {
     sh_printf("link down info\n");
     sh_printf("link down motor 1 500 500\n");
+    sh_printf("link down mtpwr 1\n");
     sh_printf("link down ired 1\n");
     sh_printf("link down fty 1\n");
 }
@@ -323,13 +393,17 @@ void Shell_Link_Cmd(char argc, char *argv)
         else if (!strcmp("ired", opt))
         {
             INT status = atoi(&argv[argv[3]]);
-            
             ptCmdBuf = Build_Ired_Cmd(status);
         }
         else if (!strcmp("fty", opt))
         {
             INT status = atoi(&argv[argv[3]]);
             ptCmdBuf = Build_Factory_Cmd(status);
+        }
+        else if (!strcmp("mtpwr", opt))
+        {
+            INT status = atoi(&argv[argv[3]]);
+            ptCmdBuf = Build_Motor_Power_Cmd(status);
         }
         else
         {
@@ -351,12 +425,13 @@ void Shell_Link_Cmd(char argc, char *argv)
 
 /** 协议测试:
  *  1.状态查询: C0 CE A0 01 00 00 2F
- *    -- 返回： 0xC0 0xCE 0x80 0x15 0x00 0x00 0x00 0x06 0x1F 0x00 0x00 0x00 0x00 0x00 0xF4 0xFE 0xFF 0xFF 0xC5 0x03 0x00 0x00 0x02 0x00 0x00 0x00 0x02
+ *    -- 返回： C0 CE 80 16 00 00 00 00 06 1F 00 00 00 00 00 F4 FE FF FF C5 03 00 00 02 00 00 00 02
  *  2.舵机控制: C0 CE A1 05 00 02 84 03 F4 01 B2  ->  设置2号舵机在500ms内, 旋转到90度
  *   ctrl_uart: 12 4C 08 07 02 84 03 F4 01 00 00 EB
  *  3.使能红外检测：C0 CE A3 01 00 01 33
  *  4.上报红外检测：C0 CE 83 01 00 01 13
  *  5.上报按键状态：C0 CE 82 02 00 01 01 14 -> 1号按键按下
  *  6.使能工厂模式：C0 CE A4 01 00 01 34
+ *  7.舵机供电：C0 CE A5 01 00 01 35
  */
  

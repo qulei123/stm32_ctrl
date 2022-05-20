@@ -76,7 +76,7 @@ void Temp_Handler(void)
         //ptChargeDrv->Set_Mode(CHARGE_MODE_FAST);
     }
     tDs18b20_Drv.bFlagStart = FALSE;
-    log("wendu %0.2f\n", ftempt);
+    //log("wendu %0.2f\n", ftempt);
 }
 
 void ChargeProtect(void)

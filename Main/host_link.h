@@ -9,8 +9,13 @@
  *  |0xC0CE|cmd(1B) | len(2B) |data(xB)|chksum(1B)|
  */
 
-typedef void (*PF_Reporte)(void *pData);
+typedef INT (*PF_Report)(VOID);
 
+typedef struct
+{
+    U8  Type;
+    PF_Report pfHandler;
+} T_ReportInfo, *PT_ReportInfo;
 
 #pragma pack(1)
 typedef struct CMT_FRAME
@@ -28,6 +33,7 @@ typedef struct CMT_FRAME
  */
 typedef struct CMT_DATA
 {
+    U8      u8Type;
     U16     u16ErrBit;
     U16     u16Battery;
     U8      au8Key[4];
@@ -35,16 +41,48 @@ typedef struct CMT_DATA
     S32     as32Angle[3];
 }T_CMT_DATA, *PT_CMT_DATA;
 
+typedef struct CMT_DATA_BAT
+{
+    U8      u8Type;
+    U16     u16ErrBit;
+    U16     u16Battery;
+}T_CMT_DATA_BAT, *PT_CMT_DATA_BAT;
+
+typedef struct CMT_DATA_KEY
+{
+    U8      u8Type;
+    U16     u16ErrBit;
+    U8      au8Key[4];
+}T_CMT_DATA_KEY, *PT_CMT_DATA_KEY;
+
+typedef struct CMT_DATA_IRDA
+{
+    U8      u8Type;
+    U16     u16ErrBit;
+    U8      u8IrDA;
+}T_CMT_DATA_IRDA, *PT_CMT_DATA_IRDA;
+
+typedef struct CMT_DATA_ANG
+{
+    U8      u8Type;
+    U16     u16ErrBit;
+    S32     as32Angle[3];
+}T_CMT_DATA_ANG, *PT_CMT_DATA_ANG;
+
+
+
 /**| id |角度|时间|
  * | 1B | 4B | 4B |
  */
-typedef struct CMT_MOTOR_DATA{
+typedef struct CMT_MOTOR_DATA
+{
     U8      Id;
     S32     s32Angle;
     U32     u32Interval;
 }T_CMT_MOTOR_DATA, *PT_CMT_MOTOR_DATA;
 
-typedef struct CMT_ANGLE{
+typedef struct CMT_ANGLE
+{
     U8      Id;
     S32     s32Angle;
 }T_CMT_ANGLE, *PT_CMT_ANGLE;
@@ -66,6 +104,8 @@ typedef struct CMT_ANGLE{
 #define CMT_CMD_CTRL_LED      0xA2
 #define CMT_CMD_CTRL_IRDA     0xA3
 #define CMT_CMD_CTRL_FACTORY  0xA4
+#define CMT_CMD_CTRL_MTPWR    0xA5
+
 
 // host <- stm32
 #define CMT_CMD_RPT_INFO      0x80

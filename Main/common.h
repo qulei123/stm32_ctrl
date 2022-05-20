@@ -34,3 +34,4 @@ U8 Calc_ChkSum(U8 *pcBuf, U16 u16Len);
 #define BE32_TO_HOST   HOST_TO_BE32
 
 #endif  //__COMMON_H
+
