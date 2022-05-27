@@ -48,6 +48,7 @@ INT Keys_Init(VOID);
 VOID Keys_Scan_Handler(VOID);
 VOID Keys_Get_Val(U8 *pKeyVal);
 VOID Ired_Get_Val(U8 *pIredVal);
+VOID Adapter_Get_Status(U8 *pStatus);
 
 
 #ifdef __cplusplus

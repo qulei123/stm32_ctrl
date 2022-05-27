@@ -38,6 +38,7 @@ typedef struct CMT_DATA
     U16     u16Battery;
     U8      au8Key[4];
     U8      u8IrDA;
+    U8      u8Adapter;
     S32     as32Angle[3];
 }T_CMT_DATA, *PT_CMT_DATA;
 
@@ -69,6 +70,12 @@ typedef struct CMT_DATA_ANG
     S32     as32Angle[3];
 }T_CMT_DATA_ANG, *PT_CMT_DATA_ANG;
 
+typedef struct CMT_DATA_ADP
+{
+    U8      u8Type;
+    U16     u16ErrBit;
+    U8      u8Adapter;
+}T_CMT_DATA_ADP, *PT_CMT_DATA_ADP;
 
 
 /**| id |角度|时间|
@@ -113,6 +120,8 @@ typedef struct CMT_ANGLE
 #define CMT_CMD_RPT_KEY       0x82
 #define CMT_CMD_RPT_IRDA      0x83
 #define CMT_CMD_RPT_ANGLE     0x84
+#define CMT_CMD_RPT_ADAPTER   0x85
+
 
 /* 数据类型 */
 #define CMT_DT_ALL            0
@@ -120,6 +129,7 @@ typedef struct CMT_ANGLE
 #define CMT_DT_KEY            2
 #define CMT_DT_IRDA           3
 #define CMT_DT_ANGLE          4
+#define CMT_DT_ADAPTER        5
 
 
 INT Do_Host_Cmd(U8 *pRecvData, U16 u16RecvLen);
@@ -127,6 +137,7 @@ INT Report_Ired_Cmd(U8 u8Stat);
 INT Report_Key_Cmd(U8 u8KeyNo, U8 u8Stat);
 INT Report_Battery_Cmd(U16 u16Num);
 INT Report_Angle_Cmd(U8 u8Id, S32 s32Angle);
+INT Report_Adapter_Cmd(U8 u8Stat);
 VOID DoCmd_Event_Handler(VOID);
 BOOL Is_Factory_Mode(VOID);
 

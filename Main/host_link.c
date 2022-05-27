@@ -181,10 +181,15 @@ INT Report_Angle_Cmd(U8 u8Id, S32 s32Angle)
     return Format_Send_Cmd(CMT_CMD_RPT_ANGLE, (U8 *)&tAngle, sizeof(tAngle));
 }
 
+/* 主动上报，一个字节数据 */
+INT Report_Adapter_Cmd(U8 u8Stat)
+{
+    return Format_Send_Cmd(CMT_CMD_RPT_ADAPTER, &u8Stat, sizeof(u8Stat));
+}
 
 /**
- * |数据类型|故障位|电量|按键|红外|角度|
- * |   1B   |  2B  | 1B | 4B | 1B | 12B|
+ * |数据类型|故障位|电量|按键|红外|适配器|角度|
+ * |   1B   |  2B  | 1B | 4B | 1B |  1B  | 12B|
  */
 static INT Report_All_Cmd(VOID)
 {
@@ -195,6 +200,7 @@ static INT Report_All_Cmd(VOID)
     tData.u16Battery = Drv_Obtain_Baty_Volt();
     Keys_Get_Val(tData.au8Key);
     Ired_Get_Val(&tData.u8IrDA);
+    Adapter_Get_Status(&tData.u8Adapter);
     Motor_Query_Angle(tData.as32Angle);
 
     return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
@@ -232,6 +238,14 @@ static INT Report_Angle(VOID)
     return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
 }
 
+static INT Report_Adapter(VOID)
+{
+    T_CMT_DATA_ADP tData = {CMT_DT_ADAPTER, 0, 0};
+    
+    Adapter_Get_Status(&tData.u8Adapter);
+    return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
+}
+
 static T_ReportInfo atReportInfoTable[] = 
 {
     {CMT_DT_ALL,     Report_All_Cmd},
@@ -239,6 +253,7 @@ static T_ReportInfo atReportInfoTable[] =
     {CMT_DT_KEY,     Report_Key},
     {CMT_DT_IRDA,    Report_Ired},
     {CMT_DT_ANGLE,   Report_Angle},
+    {CMT_DT_ADAPTER, Report_Adapter},
 };
 
 static INT Report_Cmd(INT iType)

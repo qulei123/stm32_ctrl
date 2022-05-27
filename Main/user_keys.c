@@ -58,6 +58,7 @@ enum
 static flex_button_t    tUserKeysInfo[ALL_KEY_NUM];
 static U8               UserKeysVal[KEY_NUM];
 static U8               UserIredVal;
+static U8               UserAdapterStatus;
 
 static void Key0_3_Handler(flex_button_t *ptKey)
 {
@@ -71,10 +72,11 @@ static void Key0_3_Handler(flex_button_t *ptKey)
 static void Ired_Detct_Handler(flex_button_t *ptKey)
 {
     UserIredVal = 1;
+    /* 红外检测不用了, 第二版硬件也没有, 暂时不用主动上报 */
 #if REPORT_ENABLE        
-    Report_Ired_Cmd(1);
+    //Report_Ired_Cmd(1);
 #endif
-    log_i("Ired id %d\n", ptKey->id);
+    //log_i("Ired id %d\n", ptKey->id);
 }
 
 /* 适配器检测, 需要检测按下和抬起事件 */
@@ -82,12 +84,18 @@ static void Adapter_Detct_Handler(flex_button_t *ptKey)
 {
     if (BTN_EVENT_DOWN & TYPE_TO_BIT(ptKey->event))
     {
+        UserAdapterStatus = 1;
         OnAdapter_Handler();
     }
     else
     {
+        UserAdapterStatus = 0;
         OffAdapter_Handler();
     }
+    
+#if REPORT_ENABLE        
+    Report_Adapter_Cmd(UserAdapterStatus);
+#endif
 
     log_i("ACP id %d, ev %04x\n", ptKey->id, ptKey->event);
 }
@@ -168,7 +176,12 @@ VOID Keys_Get_Val(U8 *pKeyVal)
 VOID Ired_Get_Val(U8 *pIredVal)
 {
     *pIredVal = UserIredVal;
-    UserIredVal = 0;
+    //UserIredVal = 0;
+}
+
+VOID Adapter_Get_Status(U8 *pStatus)
+{
+    *pStatus = UserAdapterStatus;
 }
 
 

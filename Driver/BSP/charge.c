@@ -92,7 +92,8 @@ void ChargeProtect(void)
         OffAdapter_Handler();
         return;
     }
-#if REPORT_ENABLE    
+    /* 策略, 电压不主动上报, rk3399查询 */
+#if REPORT_ENABLE  
     //Report_Battery_Cmd(u16mVolt);
 #endif
 
