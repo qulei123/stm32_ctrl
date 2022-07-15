@@ -222,6 +222,7 @@ FSUS_STATUS FSUS_Ping(U8 u8ServoId);
 FSUS_STATUS FSUS_ResetUserData(U8 u8ServoId);
 FSUS_STATUS FSUS_SetServoAngle(U8 u8ServoId, S16 s16Angle, U16 u16Interval);
 FSUS_STATUS FSUS_QueryServoAngle(U8 u8ServoId, S16 *pAngle);
+FSUS_STATUS FSUS_SetServoMTurnAngle(U8 u8ServoId, S32 s32Angle, U32 u32Interval);
 FSUS_STATUS FSUS_QueryServoMTurnAngle(U8 u8ServoId, S32 *pAngle, U16 *pTurn);
 
 

@@ -100,12 +100,24 @@ static INT Do_Ctrl_Motor_Cmd(U8 *pData, U16 u16Len)
         log("set motor cmd len err\n");
         return 1;
     }
-    
-    status = FSUS_SetServoAngle(ptMotor->Id, ptMotor->s32Angle, ptMotor->u32Interval);
-    if (FSUS_STATUS_SUCCESS != status)
+		
+    if (ptMotor->Id < 3)
     {
-        log("Set Servo Angle fail\n");
-        return 1;
+        status = FSUS_SetServoAngle(ptMotor->Id, ptMotor->s32Angle, ptMotor->u32Interval);
+        if (FSUS_STATUS_SUCCESS != status)
+        {
+            log("Set Servo Angle fail\n");
+            return 1;
+        }
+    }
+    else
+    {
+        status = FSUS_SetServoMTurnAngle(ptMotor->Id, ptMotor->s32Angle, ptMotor->u32Interval);
+        if (FSUS_STATUS_SUCCESS != status)
+        {
+            log("Set Servo MTurn Angle fail\n");
+            return 1;
+        }		
     }
 
     return 0;

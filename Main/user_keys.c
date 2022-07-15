@@ -26,10 +26,10 @@ void Zero_Detct_Handler(flex_button_t *ptKey);
 
 static T_KeyInfo KeysInfoTable[] = 
 {
-    {ID_KEY0,   ACTIVE_HIGH,  BTN_EVENT_CLICK,         Key0_3_Handler},
-    {ID_KEY1,   ACTIVE_HIGH,  BTN_EVENT_CLICK,         Key0_3_Handler},
-    {ID_KEY2,   ACTIVE_HIGH,  BTN_EVENT_CLICK,         Key0_3_Handler},
-    {ID_KEY3,   ACTIVE_HIGH,  BTN_EVENT_CLICK,         Key0_3_Handler},
+    {ID_KEY0,   ACTIVE_HIGH,  BTN_EVENT_DOWN,         Key0_3_Handler},
+    {ID_KEY1,   ACTIVE_HIGH,  BTN_EVENT_DOWN,         Key0_3_Handler},
+    {ID_KEY2,   ACTIVE_HIGH,  BTN_EVENT_DOWN,         Key0_3_Handler},
+    {ID_KEY3,   ACTIVE_HIGH,  BTN_EVENT_DOWN,         Key0_3_Handler},
     {ID_IR_IN,  ACTIVE_LOW,   BTN_EVENT_SHORT,         Ired_Detct_Handler},         /* 红外检测，会持续产生有4.5s低脉冲 */
     {ID_ACP_IN, ACTIVE_HIGH,  BTN_EVENT_DOWN | BTN_EVENT_UP,            Adapter_Detct_Handler},      /* PB4 -> 默认低电平，适配器接入，会产生高电平 */
     {ID_ZPT0,   ACTIVE_HIGH,  BTN_EVENT_DOWN,          Zero_Detct_Handler},         /* 摇头 */
