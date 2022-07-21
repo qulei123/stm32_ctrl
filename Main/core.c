@@ -51,11 +51,12 @@ void Core_Polling(void)
 
 /******************************************/
 MOD_EVENT_INSTANCE(tEventDoCmd);
-MOD_EVENT_INSTANCE(tEventOnAdapter);
-MOD_EVENT_INSTANCE(tEventOffAdapter);
+//MOD_EVENT_INSTANCE(tEventOnAdapter);      /* 由定时器轮询的按键事件触发 */
+//MOD_EVENT_INSTANCE(tEventOffAdapter);
 MOD_EVENT_INSTANCE(tEventShell);
 MOD_TIMER_INSTANCE(tTimerKeys, 20, 1);
 MOD_TIMER_INSTANCE(tTimerCharge, 5000, 1);
+MOD_TIMER_INSTANCE(tTimerVolt, 2000, 1);
 MOD_TIMER_INSTANCE(tTimerIdle, 500, 1);
 
 void Core_Polling_Init(void)
@@ -65,6 +66,7 @@ void Core_Polling_Init(void)
     //Mod_Event_Register(&tEventOffAdapter, OffAdapter_Handler);
     Mod_SoftTimer_Regist(&tTimerKeys, Keys_Scan_Handler);
     Mod_SoftTimer_Regist(&tTimerCharge, ChargeProtect);
+    Mod_SoftTimer_Regist(&tTimerVolt, Get_Battery_Preference);
     Mod_SoftTimer_Regist(&tTimerIdle, Core_Monitor);
 #if _NR_MICRO_SHELL_ENABLE    
     Mod_Event_Register(&tEventShell, Dbg_Shell_Handler);

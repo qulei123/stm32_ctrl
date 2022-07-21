@@ -33,5 +33,13 @@ U8 Calc_ChkSum(U8 *pcBuf, U16 u16Len);
 #define BE16_TO_HOST   HOST_TO_BE16
 #define BE32_TO_HOST   HOST_TO_BE32
 
+/* 64位数据类型有bug */
+#define ABS(x)                  \
+({				                \
+    int32_t __x = (x);			\
+    (__x < 0) ? -__x : __x;	    \
+})
+
+
 #endif  //__COMMON_H
 

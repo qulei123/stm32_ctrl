@@ -64,7 +64,7 @@ extern "C"
 #define NR_SHELL_CMD_HISTORY_BUF_LENGTH 253
 
 /* The user's name. */
-#define NR_SHELL_USER_NAME "nr@sky# "
+#define NR_SHELL_USER_NAME "robot:"
 
 /*
 0: \n

@@ -8,7 +8,6 @@
  *--------------------------------------------------
  */
 
-#include "common.h"
 #include "drv_adc.h"
 #include "isl6251.h"
 #include "ds18b20.h"
@@ -41,7 +40,7 @@ void OffAdapter_Handler(void)
     ptChargeDrv->Set_Mode(CHARGE_MODE_NOMAL);
     ptChargeDrv->Set_Status(CHARGE_STOP);
     ptChargeDrv->AdapterStatus = FALSE;
-}   
+}
 
 
 MOD_TIMER_INSTANCE(tTimerTemp, 1000, 0);
@@ -82,19 +81,19 @@ void Temp_Handler(void)
 void ChargeProtect(void)
 {
     INT iRet;
-    U16 u16mVolt;
+    //U16 u16mVolt;
     //log("ChargeProtect\n");
     
     /* 1. 判断充电电池压, adc -> battery volt */
-    u16mVolt = Drv_Obtain_Baty_Volt();
-    if (u16mVolt > 8400)
+    //u16mVolt = Drv_Obtain_Baty_Volt();
+    if (ptChargeDrv->u16ReptVolt > 8300)
     {
         OffAdapter_Handler();
         return;
     }
     /* 策略, 电压不主动上报, rk3399查询 */
 #if REPORT_ENABLE  
-    //Report_Battery_Cmd(u16mVolt);
+    //Report_Battery_Cmd(ptChargeDrv->u16ReptVolt, ptChargeDrv->u8VoltLevel);
 #endif
 
     /*  2. 温度保护策略
@@ -116,16 +115,11 @@ void ChargeProtect(void)
     }
 }
 
-#if 0
+#if 1
 /** 
- *  为了达到充电的动态效果，注册了一个timer，每30s电压加5个mv，
  *  充到最大电压4150mv为full，此时电量为100%，电池温度设置为30。
  *  电量是通过电压按一点算法获取。
  */
-
-/* Set ADC sample rate (30sec)*/
-#define ADC_SAMPLE_RATE        30
-
 #define OCVREG0                0         // 3.1328
 #define OCVREG1                0         // 3.2736
 #define OCVREG2                0         // 3.5000
@@ -143,21 +137,21 @@ void ChargeProtect(void)
 #define OCVREGE                93        // 4.0832
 #define OCVREGF                100       // 4.1536
 
-#define OCVVOL0                3132
-#define OCVVOL1                3273
-#define OCVVOL2                3500
-#define OCVVOL3                3555
-#define OCVVOL4                3625
-#define OCVVOL5                3660
-#define OCVVOL6                3696
-#define OCVVOL7                3731
-#define OCVVOL8                3766
-#define OCVVOL9                3801
-#define OCVVOLA                3836
-#define OCVVOLB                3872
-#define OCVVOLC                3942
-#define OCVVOLD                4012
-#define OCVVOLE                4090//4083
+#define OCVVOL0                2800
+#define OCVVOL1                2881
+#define OCVVOL2                2965
+#define OCVVOL3                3048
+#define OCVVOL4                3133
+#define OCVVOL5                3219
+#define OCVVOL6                3306
+#define OCVVOL7                3392
+#define OCVVOL8                3477
+#define OCVVOL9                3562
+#define OCVVOLA                3646
+#define OCVVOLB                3729
+#define OCVVOLC                3897
+#define OCVVOLD                3981
+#define OCVVOLE                4066//4083
 #define OCVVOLF                4150//4150
 
 
@@ -243,22 +237,68 @@ static uint8_t Battery_Restcap(int ocv)
     }
 }
 
-static void Get_battery_preference(void)
+void Get_Battery_Preference(void)
 {
-    uint8_t voltage_level = Battery_Restcap(battery_vol);
-    uint8_t battery_vol = 5;        //每30s轮询一次，电压加5mv
-    uint8_t battery_temp = 30;
+    U16 u16CurmVolt, u16ReptVolt;
+    INT iTmpDeta;
+    static U16 u16PremVolt = 0;
+    static U16 u16BaseVolt = 0;
+    uint8_t u8VoltLevel;
+    //log("ChargeProtect\n");
     
-    if (voltage_level > 100)
+    /* 初始化 u16PremVolt, 首次执行 */
+    if ((0 == u16PremVolt) || (0 == u16BaseVolt))
     {
-        voltage_level = 100;
+        u16PremVolt = Drv_Obtain_Baty_Volt();
+        u16BaseVolt = u16PremVolt;  
     }
-
-    if(battery_vol > 4150)
+    
+    u16CurmVolt = Drv_Obtain_Baty_Volt();
+    iTmpDeta = u16CurmVolt - u16PremVolt;
+    
+    /* 趋势判断, 滤除相反趋势的点(异常点) */
+    if (!(((iTmpDeta >= -5) && (TRUE == ptChargeDrv->AdapterStatus)) ||
+        ((iTmpDeta <= 5) && (FALSE == ptChargeDrv->AdapterStatus))))
     {
-        battery_vol = 4150;
+        /* 发布程序，屏蔽此处log */
+        log_w("baty err pre:%d\tcur:%d\tdeta:%d\tflag:%d\n", u16PremVolt, u16CurmVolt, iTmpDeta, ptChargeDrv->AdapterStatus);
+        return;
     }
+    
+    /* 更新前一次的值 */
+    u16PremVolt = u16CurmVolt;
+    
+    /* 滤除跳变数值, 大于22, 变化1%(电压正常跳变点) */
+    if (ABS(iTmpDeta) > 20)
+    {
+        /* 电压出现跳变，可是是插拔适配器引起的 */
+        log_w("baty jump pre:%d\tcur:%d\tdeta:%d\n", u16CurmVolt - iTmpDeta, u16CurmVolt, iTmpDeta);
+        return;
+    }
+        
+    u16ReptVolt = u16BaseVolt + iTmpDeta;
+    u16BaseVolt = u16ReptVolt;
+    
+    u8VoltLevel = Battery_Restcap(u16ReptVolt / 2);
+    if (u8VoltLevel > 100)
+    {
+        u8VoltLevel = 100;
+    }
+    
+    ptChargeDrv->u16ReptVolt = u16ReptVolt;
+    ptChargeDrv->u8VoltLevel = u8VoltLevel;
+    /* 发布程序，屏蔽此处log */
+    log("baty volt %d\t[%d]\n", u16ReptVolt, u8VoltLevel);
 }
+
+U16 Get_Battery_Volt(void)
+{
+    return ptChargeDrv->u16ReptVolt;
+}
+
+U8 Get_Battery_Level(void)
+{
+    return ptChargeDrv->u8VoltLevel;
+}
+
 #endif
-
-

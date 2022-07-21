@@ -19,8 +19,10 @@
 #define ADC_LEN 20
 static ADC_HandleTypeDef tAdcHdl;
 static uint16_t u16AdcVal[ADC_LEN];
+static uint16_t u16AdcAver[ADC_LEN];
 
 
+/* drv_msp.c 配置adc时钟为9M */
 void Drv_Baty_Volt_Adc_Init(void)
 {
     ADC_HandleTypeDef *ptAdc = &tAdcHdl;
@@ -39,7 +41,7 @@ void Drv_Baty_Volt_Adc_Init(void)
 
     stCfg.Channel      = BATY_VOLT_ADC_CHL;
     stCfg.Rank         = ADC_REGULAR_RANK_1;
-    stCfg.SamplingTime = ADC_SAMPLETIME_55CYCLES_5 ;
+    stCfg.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;    /* ADC_SAMPLETIME_55CYCLES_5\ADC_SAMPLETIME_239CYCLES_5 */
     HAL_ADC_ConfigChannel(ptAdc, &stCfg);
 
     HAL_ADC_Start_IT(ptAdc);
@@ -51,12 +53,19 @@ void BATY_VOLT_ADC_IRQHandler(void)
     //log("adc, volt\n");   
 }
 
-
+/* 20 * 20, 在中断有滤波计算不合理, 对AD的实时性要求不高, 暂时先这样处理 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     static int i = 0;
+    static int j = 0;
+    
     u16AdcVal[i] = HAL_ADC_GetValue(hadc);
     i = (i + 1) % ADC_LEN;
+    if (i == 0)
+    {
+        u16AdcAver[j] = Filter_DeExtremeAver_U16(u16AdcVal, ADC_LEN);
+        j = (j + 1) % ADC_LEN;
+    }
 }
 
 /* adc -> volt -> Bat volt
@@ -65,7 +74,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 uint16_t Drv_Obtain_Baty_Volt(void)
 {
     uint16_t u16AverVal, u16mVolt, u16batymVolt;
-    u16AverVal = Filter_DeExtremeAver_U16(u16AdcVal, ADC_LEN);
+    u16AverVal = Filter_DeExtremeAver_U16(u16AdcAver, ADC_LEN);
     u16mVolt = CALC_12BITS_TO_VOLT(u16AverVal);
     u16batymVolt = (u16mVolt + BAT_DETA) * BAT_FACTOR;
     //log("adc %d, volt %d, batv %d\n", u16AdcVal, u16mVolt, u16batymVolt);

@@ -143,7 +143,7 @@ static void _Clock_Enable(void)
     BATY_VOLT_ADC_CLK_EN();
     RCC_PeriphCLKInitTypeDef  PeriphClkInit;
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-    PeriphClkInit.AdcClockSelection    = RCC_ADCPCLK2_DIV6;        /* 分频因子6, adc时钟为72/6M = 12MHz */
+    PeriphClkInit.AdcClockSelection    = RCC_ADCPCLK2_DIV8;        /* 分频因子6, adc时钟为72/8M = 9MHz */
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);    
 }
 

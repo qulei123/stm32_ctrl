@@ -76,6 +76,8 @@ int Charge_Current_Get(void)
 T_DrvChargeFunc tISL6251_Drv =
 {
     0,
+    0,
+    0,
     ISL6251_Init,
     ISL6251_DetectAdapter,    
     ISL6251_SetChargeStatus,

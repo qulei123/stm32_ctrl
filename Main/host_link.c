@@ -13,6 +13,7 @@
 #include "common.h"
 #include "drv_msp.h"
 #include "motor.h"
+#include "charge.h"
 #include "user_keys.h"
 #include "host_link.h"
 
@@ -166,17 +167,17 @@ static VOID Motor_Query_Angle(S32 *pAngle)
     }
 }
 
-/* 主动上报，u16 */
-INT Report_Battery_Cmd(U16 u16Battery)
+/* 主动上报，u16 + u8 */
+INT Report_Battery_Cmd(U16 u16BatyVolt, U8 u8VoltLevel)
 {
-    return Format_Send_Cmd(CMT_CMD_RPT_BATTERY, (U8 *)&u16Battery, sizeof(u16Battery));
+    T_CMT_BAT tBaty = {u16BatyVolt, u8VoltLevel};
+    return Format_Send_Cmd(CMT_CMD_RPT_BATTERY, (U8 *)&tBaty, sizeof(tBaty));
 }
 
 /* 主动上报，按键序号 + 按键状态 */
 INT Report_Key_Cmd(U8 u8KeyNo, U8 u8Stat)
 {
     U8 Data[2] = {u8KeyNo, u8Stat};
-
     return Format_Send_Cmd(CMT_CMD_RPT_KEY, Data, sizeof(Data));
 }
 
@@ -209,7 +210,8 @@ static INT Report_All_Cmd(VOID)
 
     tData.u8Type     = CMT_DT_ALL;
     tData.u16ErrBit  = 0;
-    tData.u16Battery = Drv_Obtain_Baty_Volt();
+    tData.u16BatyVolt = Get_Battery_Volt();
+    tData.u8VoltLevel = Get_Battery_Level();
     Keys_Get_Val(tData.au8Key);
     Ired_Get_Val(&tData.u8IrDA);
     Adapter_Get_Status(&tData.u8Adapter);
@@ -220,9 +222,10 @@ static INT Report_All_Cmd(VOID)
 
 static INT Report_Battery(VOID)
 {
-    T_CMT_DATA_BAT tData = {CMT_DT_BATTERY, 0, 0};
+    T_CMT_DATA_BAT tData = {CMT_DT_BATTERY, 0, 0, 0};
 
-    tData.u16Battery = Drv_Obtain_Baty_Volt();
+    tData.u16BatyVolt = Get_Battery_Volt();
+    tData.u8VoltLevel = Get_Battery_Level();
     return Format_Send_Cmd(CMT_CMD_RPT_INFO, (U8 *)&tData, sizeof(tData));
 }
 

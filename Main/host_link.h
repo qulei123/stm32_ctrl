@@ -35,7 +35,8 @@ typedef struct CMT_DATA
 {
     U8      u8Type;
     U16     u16ErrBit;
-    U16     u16Battery;
+    U16     u16BatyVolt;
+    U8      u8VoltLevel;
     U8      au8Key[4];
     U8      u8IrDA;
     U8      u8Adapter;
@@ -46,7 +47,8 @@ typedef struct CMT_DATA_BAT
 {
     U8      u8Type;
     U16     u16ErrBit;
-    U16     u16Battery;
+    U16     u16BatyVolt;
+    U8      u8VoltLevel;
 }T_CMT_DATA_BAT, *PT_CMT_DATA_BAT;
 
 typedef struct CMT_DATA_KEY
@@ -94,6 +96,12 @@ typedef struct CMT_ANGLE
     S32     s32Angle;
 }T_CMT_ANGLE, *PT_CMT_ANGLE;
 
+typedef struct CMT_BAT
+{
+    U16     u16BatyVolt;
+    U8      u8VoltLevel;
+}T_CMT_BAT, *PT_CMT_BAT;
+
 #pragma pack()
 
 
@@ -135,7 +143,7 @@ typedef struct CMT_ANGLE
 INT Do_Host_Cmd(U8 *pRecvData, U16 u16RecvLen);
 INT Report_Ired_Cmd(U8 u8Stat);
 INT Report_Key_Cmd(U8 u8KeyNo, U8 u8Stat);
-INT Report_Battery_Cmd(U16 u16Num);
+INT Report_Battery_Cmd(U16 u16BatyVolt, U8 u8VoltLevel);
 INT Report_Angle_Cmd(U8 u8Id, S32 s32Angle);
 INT Report_Adapter_Cmd(U8 u8Stat);
 VOID DoCmd_Event_Handler(VOID);
