@@ -1,7 +1,4 @@
-/**  Copyright (s) 2022 西安天和
- *   All rights reserved
- * 
- *   文件名称：util_log.c
+/**  文件名称：util_log.c
  *   摘要：使用SysTick计时，单位ms
  *  
  *   修改历史        版本号     Author  修改内容
@@ -9,12 +6,10 @@
  *   2022.03.21   v1      ql     创建文件
  *   --------------------------------------------------
  */
-
-#include "util_log.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "util_log.h"
 
 
 #define LOG_BUF_MIN 64

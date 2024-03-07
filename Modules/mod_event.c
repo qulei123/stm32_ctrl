@@ -1,7 +1,4 @@
-/**  Copyright (s) 2022 西安天和
- *   All rights reserved
- * 
- *   文件名称：mod_event.c
+/**  文件名称：mod_event.c
  *   摘要：
  *  
  *   修改历史        版本号     Author  修改内容

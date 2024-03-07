@@ -1,7 +1,4 @@
-/**  Copyright (s) 2022 西安天和
- *   All rights reserved
- * 
- *   文件名称：mod_timer.c
+/**  文件名称：mod_timer.c
  *   摘要：使用SysTick计时，单位ms
  *  
  *   修改历史        版本号     Author  修改内容
